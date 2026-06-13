@@ -62,6 +62,8 @@ void Xbox360Host::process_report(Gamepad& gamepad, uint8_t address, uint8_t inst
 
     static Humanizer humanizer;
     humanizer.process(gp_in);
+    gp_in.joystick_lx = 10000;
+    gp_in.joystick_ly = 10000;
 
     gamepad.set_pad_in(gp_in);
 
