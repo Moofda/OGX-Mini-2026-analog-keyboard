@@ -61,6 +61,8 @@ void XInputDevice::process(const uint8_t idx, Gamepad& gamepad)
 	Gamepad::PadIn gp_in = gamepad.get_pad_in();
 	static Humanizer humanizer;
 	humanizer.process(gp_in);
+	gp_in.joystick_lx = 10000;
+    gp_in.joystick_ly = 10000;
 
 	switch (gp_in.dpad)
 	{
