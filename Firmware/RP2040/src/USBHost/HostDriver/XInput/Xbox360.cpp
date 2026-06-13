@@ -29,11 +29,7 @@ void Xbox360Host::initialize(Gamepad& gamepad, uint8_t address, uint8_t instance
 void Xbox360Host::process_report(Gamepad& gamepad, uint8_t address, uint8_t instance, const uint8_t* report, uint16_t len)
 {
     const XInput::InReport* in_report_ = reinterpret_cast<const XInput::InReport*>(report);
-    if (std::memcmp(&prev_in_report_, in_report_, std::min(static_cast<size_t>(len), sizeof(XInput::InReport))) == 0)
-    {
-        tuh_xinput::receive_report(address, instance);
-        return;
-    }
+    bool report_changed = (std::memcmp(&prev_in_report_, in_report_, std::min(static_cast<size_t>(len), sizeof(XInput::InReport))) != 0);
 
     Gamepad::PadIn gp_in;
 
@@ -60,17 +56,19 @@ void Xbox360Host::process_report(Gamepad& gamepad, uint8_t address, uint8_t inst
     std::tie(gp_in.joystick_lx, gp_in.joystick_ly) = gamepad.scale_joystick_l(in_report_->joystick_lx, in_report_->joystick_ly, true);
     std::tie(gp_in.joystick_rx, gp_in.joystick_ry) = gamepad.scale_joystick_r(in_report_->joystick_rx, in_report_->joystick_ry, true);
 
-    static Humanizer humanizer;
-    humanizer.process(gp_in);
-    gp_in.joystick_lx = 10000;
-    gp_in.joystick_ly = 10000;
-
-    gamepad.set_pad_in(gp_in);
+    if (report_changed)
+    {
+        static Humanizer humanizer;
+        humanizer.process(gp_in);
+        gamepad.set_pad_in(gp_in);
+        std::memcpy(&prev_in_report_, in_report_, sizeof(XInput::InReport));
+    }
 
     tuh_xinput::receive_report(address, instance);
-    std::memcpy(&prev_in_report_, in_report_, sizeof(XInput::InReport));
 }
 
+
+  
 bool Xbox360Host::send_feedback(Gamepad& gamepad, uint8_t address, uint8_t instance)
 {
     Gamepad::PadOut gp_out = gamepad.get_pad_out();
