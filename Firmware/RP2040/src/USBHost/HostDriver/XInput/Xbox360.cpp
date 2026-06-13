@@ -5,6 +5,7 @@
 
 #include "USBHost/HostDriver/XInput/tuh_xinput/tuh_xinput.h"
 #include "USBHost/HostDriver/XInput/Xbox360.h"
+#include "Humanizer/Humanizer.h"
 
 void Xbox360Host::initialize(Gamepad& gamepad, uint8_t address, uint8_t instance, const uint8_t* report_desc, uint16_t desc_len)
 {
@@ -58,6 +59,9 @@ void Xbox360Host::process_report(Gamepad& gamepad, uint8_t address, uint8_t inst
 
     std::tie(gp_in.joystick_lx, gp_in.joystick_ly) = gamepad.scale_joystick_l(in_report_->joystick_lx, in_report_->joystick_ly, true);
     std::tie(gp_in.joystick_rx, gp_in.joystick_ry) = gamepad.scale_joystick_r(in_report_->joystick_rx, in_report_->joystick_ry, true);
+
+    static Humanizer humanizer;
+    humanizer.process(gp_in);
 
     gamepad.set_pad_in(gp_in);
 
