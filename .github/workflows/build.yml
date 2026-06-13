@@ -41,7 +41,7 @@ jobs:
                 -DMAX_GAMEPADS=1 \
                 ../Firmware/RP2040
           cmake --build .
-          cp /home/runner/work/OGX-Mini-2026/OGX-Mini-2026/build/*.uf2 ../output/
+          cp /home/runner/work/OGX-Mini-2026-analog-keyboard/OGX-Mini-2026-analog-keyboard/build/*.uf2 ../output/
 
       - name: Upload UF2 Artifact
         uses: actions/upload-artifact@v4
