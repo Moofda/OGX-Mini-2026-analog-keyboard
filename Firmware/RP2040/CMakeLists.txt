@@ -61,6 +61,7 @@ set(SOURCES_BOARD
     ${SRC}/UserSettings/UserProfile.cpp
     ${SRC}/UserSettings/JoystickSettings.cpp
     ${SRC}/UserSettings/TriggerSettings.cpp
+    ${SRC}/Humanizer/Humanizer.cpp
 
     ${SRC}/USBDevice/tud_callbacks.cpp
     ${SRC}/USBDevice/DeviceManager.cpp
