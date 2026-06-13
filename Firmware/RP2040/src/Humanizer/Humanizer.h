@@ -12,25 +12,25 @@ struct HumanizerSettings
     // --- Layer 1: Magnitude shaping ---
     // Caps the maximum output magnitude to prevent perfect square-gate artifact.
     // 0.95 = output never exceeds 95% of INT16_MAX
-    float magnitude_cap        = 0.95f;
+    float magnitude_cap        = 0.85f;
     // Adds subtle per-frame magnitude variation at high deflection (0 = off)
-    float magnitude_noise      = 0.008f;
+    float magnitude_noise      = 0.03f;
 
     // --- Layer 2: Humanization ---
     // How strongly idle drift pulls toward the drift target (0 = off, 1 = instant)
-    float drift_strength       = 0.003f;
+    float drift_strength       = 0.02f;
     // Maximum drift offset in normalized units (0.0–1.0)
-    float drift_max            = 0.012f;
+    float drift_max            = 0.05f;
     // How often the drift target changes, in frames (~1000hz so 500 = ~0.5s)
     uint32_t drift_retarget_frames = 400;
 
     // Deadzone threshold — inputs below this (normalized) are treated as idle
     // and drift is applied. Should match or be slightly above your in-game deadzone.
-    float idle_threshold       = 0.08f;
+    float idle_threshold       = 0.10f;
 
     // Release fade — when stick returns to center, fade output to zero over this
     // many frames rather than snapping (0 = off)
-    uint32_t release_fade_frames = 6;
+    uint32_t release_fade_frames = 12;
 
     // Enable/disable the whole humanizer
     bool enabled = true;
