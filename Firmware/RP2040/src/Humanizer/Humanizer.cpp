@@ -77,7 +77,10 @@ void Humanizer::process_stick(
     uint32_t& fade_counter,
     bool& was_idle)
 {
-    (void)fade_counter;
+    (void)drift_x; (void)drift_y;
+    (void)target_x; (void)target_y;
+    (void)retarget_counter; (void)fade_counter;
+    (void)was_idle;
 
     fix16_t nx = fp_div(fp_from_int(x), fp_from_int(32767));
     fix16_t ny = fp_div(fp_from_int(y), fp_from_int(32767));
@@ -85,33 +88,7 @@ void Humanizer::process_stick(
     fix16_t mag_sq = fp_mul(nx, nx) + fp_mul(ny, ny);
     fix16_t idle_sq = fp_mul(settings_.idle_threshold, settings_.idle_threshold);
     bool is_idle = (mag_sq < idle_sq);
-
-    if (is_idle)
-    {
-        retarget_counter++;
-        if (retarget_counter >= settings_.drift_retarget_frames)
-        {
-            retarget_counter = 0;
-            target_x = fp_mul(next_rand(), settings_.drift_max);
-            target_y = fp_mul(next_rand(), settings_.drift_max);
-        }
-        drift_x = drift_x + fp_mul(target_x - drift_x, settings_.drift_strength);
-        drift_y = drift_y + fp_mul(target_y - drift_y, settings_.drift_strength);
-        nx = nx + drift_x;
-        ny = ny + drift_y;
-        if (nx > FIX_1)    nx = FIX_1;
-        if (nx < FIX_NEG1) nx = FIX_NEG1;
-        if (ny > FIX_1)    ny = FIX_1;
-        if (ny < FIX_NEG1) ny = FIX_NEG1;
-    }
-    else
-    {
-        drift_x = fp_mul(drift_x, FIX_095);
-        drift_y = fp_mul(drift_y, FIX_095);
-        retarget_counter = 0;
-    }
-
-    was_idle = is_idle;
+    (void)is_idle;
 
     x = static_cast<int16_t>(fp_to_int(fp_mul(nx, fp_from_int(32767))));
     y = static_cast<int16_t>(fp_to_int(fp_mul(ny, fp_from_int(32767))));
