@@ -30,20 +30,16 @@ constexpr uint32_t FEEDBACK_DELAY_MS = 200;
 
 Gamepad _gamepads[MAX_GAMEPADS];
 
-
 void core1_task() {
     HostManager& host_manager = HostManager::get_instance();
     host_manager.initialize(_gamepads);
 
-    //Pico-PIO-USB will not reliably detect a hot plug on some boards,
-    //monitor and init host stack after connection
     while(!board_api::usb::host_connected()) {
         sleep_ms(100);
     }
 
     pio_usb_configuration_t pio_cfg = PIO_USB_CONFIG;
     tuh_configure(BOARD_TUH_RHPORT, TUH_CFGID_RPI_PIO_USB_CONFIGURATION, &pio_cfg);
-
     tuh_init(BOARD_TUH_RHPORT);
 
     uint32_t tid_feedback = TaskQueue::Core1::get_new_task_id();
@@ -64,22 +60,18 @@ void set_gp_check_timer(uint32_t task_id) {
 
     TaskQueue::Core0::queue_delayed_task(task_id, UserSettings::GP_CHECK_DELAY_MS, true,
     [&user_settings] {
-        // Check for input source change (Start+Select when in PS1PS2/GAMECUBE mode)
         if (user_settings.check_for_input_source_change(_gamepads[0])) {
-            // No reboot; input source stored
         }
-        // Check gamepad inputs for button combo to change usb device driver
         else if (user_settings.check_for_driver_change(_gamepads[0])) {
             OGXM_LOG("Driver change detected, storing new driver.\n");
             user_settings.store_driver_type(user_settings.get_current_driver());
         }
     });
 #else
-    (void)task_id;  // Fixed output, combos disabled
+    (void)task_id;
 #endif
 }
 
-//Called by tusb host so we know to connect or disconnect usb
 void standard::host_mounted(bool host_mounted) {
     static std::atomic<bool> tud_is_inited = false;
     board_api::set_led(host_mounted);
@@ -117,9 +109,19 @@ void standard::initialize() {
 }
 
 void standard::run() {
+    // BLINK 1: entered run()
+    for (int i = 0; i < 1; i++) { board_api::set_led(true); sleep_ms(300); board_api::set_led(false); sleep_ms(300); }
+
     static Humanizer g_humanizer;
+
+    // BLINK 2: humanizer constructed ok
+    for (int i = 0; i < 2; i++) { board_api::set_led(true); sleep_ms(300); board_api::set_led(false); sleep_ms(300); }
+
     DeviceDriverType current_driver = UserSettings::get_instance().get_current_driver();
     const bool gpio_device_mode = (current_driver == DeviceDriverType::PS1PS2 || current_driver == DeviceDriverType::GAMECUBE || current_driver == DeviceDriverType::DREAMCAST);
+
+    // BLINK 3: past driver check
+    for (int i = 0; i < 3; i++) { board_api::set_led(true); sleep_ms(300); board_api::set_led(false); sleep_ms(300); }
 
     if (gpio_device_mode) {
         HostManager& host_manager = HostManager::get_instance();
@@ -164,8 +166,6 @@ void standard::run() {
         if (input_src == HostInputSource::N64_GPIO) {
             GPIOHost::n64_host_init(0, 19);
         }
-        /* Present as USB device to console immediately so PS2/GC/Dreamcast see the adapter at boot
-         * (host_mounted() returns early for these drivers and never calls tud_init). */
         tud_init(BOARD_TUD_RHPORT);
     } else {
         multicore_reset_core1();
@@ -180,7 +180,6 @@ void standard::run() {
             host_mounted(true);
         }
 
-        /* GPIO input when output is USB (e.g. real PS1/PS2/GC controller → Switch/Xbox/DInput) */
         HostInputSource input_src = UserSettings::get_instance().get_input_source();
         if (input_src == HostInputSource::PSX_GPIO) {
             GPIOHost::psx_host_init(0, 20, 19);
@@ -190,6 +189,9 @@ void standard::run() {
             GPIOHost::n64_host_init(0, 19);
         }
     }
+
+    // BLINK 4: entering main loop
+    for (int i = 0; i < 4; i++) { board_api::set_led(true); sleep_ms(300); board_api::set_led(false); sleep_ms(300); }
 
     uint32_t tid_gp_check = TaskQueue::Core0::get_new_task_id();
     set_gp_check_timer(tid_gp_check);
@@ -235,11 +237,5 @@ void standard::run() {
 #endif
     }
 }
-
-// #else // OGXM_BOARD == PI_PICO || ... || RP2354
-
-// void standard::host_mounted(bool host_mounted) {}
-// void standard::initialize() {}
-// void standard::run() {}
 
 #endif // PI_PICO || RP2040_ZERO || ADAFRUIT_FEATHER || RP2350_USB_A || RP2350_ZERO || RP2040_XIAO || RP2354
