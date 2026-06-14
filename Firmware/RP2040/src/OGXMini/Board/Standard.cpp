@@ -109,19 +109,10 @@ void standard::initialize() {
 }
 
 void standard::run() {
-    // BLINK 1: entered run()
-    for (int i = 0; i < 1; i++) { board_api::set_led(true); sleep_ms(300); board_api::set_led(false); sleep_ms(300); }
-
     static Humanizer g_humanizer;
-
-    // BLINK 2: humanizer constructed ok
-    for (int i = 0; i < 2; i++) { board_api::set_led(true); sleep_ms(300); board_api::set_led(false); sleep_ms(300); }
 
     DeviceDriverType current_driver = UserSettings::get_instance().get_current_driver();
     const bool gpio_device_mode = (current_driver == DeviceDriverType::PS1PS2 || current_driver == DeviceDriverType::GAMECUBE || current_driver == DeviceDriverType::DREAMCAST);
-
-    // BLINK 3: past driver check
-    for (int i = 0; i < 3; i++) { board_api::set_led(true); sleep_ms(300); board_api::set_led(false); sleep_ms(300); }
 
     if (gpio_device_mode) {
         HostManager& host_manager = HostManager::get_instance();
@@ -190,9 +181,6 @@ void standard::run() {
         }
     }
 
-    // BLINK 4: entering main loop
-    for (int i = 0; i < 4; i++) { board_api::set_led(true); sleep_ms(300); board_api::set_led(false); sleep_ms(300); }
-
     uint32_t tid_gp_check = TaskQueue::Core0::get_new_task_id();
     set_gp_check_timer(tid_gp_check);
 
@@ -226,12 +214,9 @@ void standard::run() {
                 GPIOHost::n64_host_poll(_gamepads[0]);
             }
         }
-       for (uint8_t i = 0; i < MAX_GAMEPADS; ++i) {
-            board_api::set_led(true); sleep_ms(100); board_api::set_led(false);
+        for (uint8_t i = 0; i < MAX_GAMEPADS; ++i) {
             Gamepad::PadIn pad = _gamepads[i].get_pad_in();
-            board_api::set_led(true); sleep_ms(100); board_api::set_led(false);
             g_humanizer.process(pad);
-            board_api::set_led(true); sleep_ms(100); board_api::set_led(false);
             _gamepads[i].set_pad_in(pad);
             device_driver->process(i, _gamepads[i]);
         }
