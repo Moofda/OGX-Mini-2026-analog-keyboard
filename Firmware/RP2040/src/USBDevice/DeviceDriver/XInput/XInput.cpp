@@ -5,6 +5,7 @@
 #include "tusb.h"
 #include "USBDevice/DeviceDriver/XInput/tud_xinput/tud_xinput.h"
 #include "USBDevice/DeviceDriver/XInput/XInput.h"
+#include "Humanizer/Humanizer.h"
 
 extern "C" {
 #include "xsm3.h"
@@ -58,6 +59,7 @@ void XInputDevice::process(const uint8_t idx, Gamepad& gamepad)
 	in_report_.buttons[0] = 0;
 	in_report_.buttons[1] = 0;
 	Gamepad::PadIn gp_in = gamepad.get_pad_in();
+	Humanizer::get_instance().process(gp_in);
 
 	switch (gp_in.dpad)
 	{
