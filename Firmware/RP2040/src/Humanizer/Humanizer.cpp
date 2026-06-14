@@ -51,23 +51,8 @@ fix16_t Humanizer::next_rand()
 
 void Humanizer::process(Gamepad::PadIn& pad_in)
 {
-    if (!settings_.enabled) return;
-
-    process_stick(
-        pad_in.joystick_lx, pad_in.joystick_ly,
-        drift_lx_, drift_ly_,
-        target_lx_, target_ly_,
-        retarget_counter_l_,
-        fade_counter_l_,
-        was_idle_l_);
-
-    process_stick(
-        pad_in.joystick_rx, pad_in.joystick_ry,
-        drift_rx_, drift_ry_,
-        target_rx_, target_ry_,
-        retarget_counter_r_,
-        fade_counter_r_,
-        was_idle_r_);
+    (void)pad_in;
+    return;
 }
 
 void Humanizer::process_stick(
