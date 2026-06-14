@@ -229,7 +229,9 @@ void standard::run() {
        for (uint8_t i = 0; i < MAX_GAMEPADS; ++i) {
             board_api::set_led(true); sleep_ms(100); board_api::set_led(false);
             Gamepad::PadIn pad = _gamepads[i].get_pad_in();
+            board_api::set_led(true); sleep_ms(100); board_api::set_led(false);
             g_humanizer.process(pad);
+            board_api::set_led(true); sleep_ms(100); board_api::set_led(false);
             _gamepads[i].set_pad_in(pad);
             device_driver->process(i, _gamepads[i]);
         }
