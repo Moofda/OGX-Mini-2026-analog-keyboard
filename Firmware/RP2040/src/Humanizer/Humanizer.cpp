@@ -1,5 +1,11 @@
 #include "Humanizer/Humanizer.h"
 
+static const Fix16 INT16_MAX_F(static_cast<int16_t>(32767));
+static const Fix16 FIX_1(static_cast<int16_t>(1));
+static const Fix16 FIX_0(static_cast<int16_t>(0));
+static const Fix16 FIX_NEG1(static_cast<int16_t>(-1));
+static const Fix16 FIX_095(0.95f);
+
 Fix16 Humanizer::next_rand()
 {
     rng_state_ ^= rng_state_ << 13;
@@ -38,12 +44,6 @@ void Humanizer::process_stick(
     uint32_t& fade_counter,
     bool& was_idle)
 {
-    static const Fix16 INT16_MAX_F(static_cast<int16_t>(32767));
-    static const Fix16 FIX_1(static_cast<int16_t>(1));
-    static const Fix16 FIX_0(static_cast<int16_t>(0));
-    static const Fix16 FIX_NEG1(static_cast<int16_t>(-1));
-    static const Fix16 FIX_095(0.95f);
-
     Fix16 nx = Fix16(x) / INT16_MAX_F;
     Fix16 ny = Fix16(y) / INT16_MAX_F;
 
@@ -98,7 +98,7 @@ void Humanizer::process_stick(
 
     if (fade_counter > 0 && is_idle)
     {
-        Fix16 fade = Fix16(static_cast<int16_t>(fade_counter)) / 
+        Fix16 fade = Fix16(static_cast<int16_t>(fade_counter)) /
                      Fix16(static_cast<int16_t>(settings_.release_fade_frames));
         nx = nx * fade;
         ny = ny * fade;
