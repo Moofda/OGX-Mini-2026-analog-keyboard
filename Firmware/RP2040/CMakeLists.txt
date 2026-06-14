@@ -519,6 +519,7 @@ pico_set_program_version(${FW_NAME} ${FW_VERSION})
 target_include_directories(${FW_NAME} PRIVATE 
     ${SRC}
     ${EXTERNAL_DIR}/libxsm3
+    ${LIBFIXMATH_PATH}
 )
 target_compile_definitions(${FW_NAME} PRIVATE XSM3_NO_DEBUGGING=1 XSM3_EMBEDDED=1)
 
