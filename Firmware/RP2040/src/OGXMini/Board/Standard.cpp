@@ -29,7 +29,7 @@
 constexpr uint32_t FEEDBACK_DELAY_MS = 200;
 
 Gamepad _gamepads[MAX_GAMEPADS];
-static Humanizer g_humanizer;
+
 
 void core1_task() {
     HostManager& host_manager = HostManager::get_instance();
