@@ -1,10 +1,10 @@
 #include "Humanizer/Humanizer.h"
 
-static const Fix16 INT16_MAX_F(static_cast<int16_t>(32767));
-static const Fix16 FIX_1(static_cast<int16_t>(1));
-static const Fix16 FIX_0(static_cast<int16_t>(0));
-static const Fix16 FIX_NEG1(static_cast<int16_t>(-1));
-static const Fix16 FIX_095(0.95f);
+static const fix16_t FIX_INT16_MAX = 0x7FFF0000;
+static const fix16_t FIX_1         = 0x00010000;
+static const fix16_t FIX_0         = 0x00000000;
+static const fix16_t FIX_NEG1      = 0xFFFF0000;
+static const fix16_t FIX_095       = 0x0000F333;
 
 Fix16 Humanizer::next_rand()
 {
@@ -44,24 +44,24 @@ void Humanizer::process_stick(
     uint32_t& fade_counter,
     bool& was_idle)
 {
-    Fix16 nx = Fix16(x) / INT16_MAX_F;
-    Fix16 ny = Fix16(y) / INT16_MAX_F;
+    fix16_t nx = fix16_div(fix16_from_int(x), FIX_INT16_MAX);
+    fix16_t ny = fix16_div(fix16_from_int(y), FIX_INT16_MAX);
 
-    Fix16 mag_sq = (nx * nx) + (ny * ny);
-    Fix16 idle_sq = settings_.idle_threshold * settings_.idle_threshold;
+    fix16_t mag_sq = fix16_add(fix16_mul(nx, nx), fix16_mul(ny, ny));
+    fix16_t idle_sq = fix16_mul(settings_.idle_threshold.value, settings_.idle_threshold.value);
     bool is_idle = (mag_sq < idle_sq);
 
     if (!is_idle)
     {
-        Fix16 cap_sq = settings_.magnitude_cap * settings_.magnitude_cap;
+        fix16_t cap_sq = fix16_mul(settings_.magnitude_cap.value, settings_.magnitude_cap.value);
         if (mag_sq > cap_sq)
         {
-            Fix16 mag = fix16::sqrt(mag_sq);
+            fix16_t mag = fix16_sqrt(mag_sq);
             if (mag > FIX_0)
             {
-                Fix16 scale = settings_.magnitude_cap / mag;
-                nx = nx * scale;
-                ny = ny * scale;
+                fix16_t scale = fix16_div(settings_.magnitude_cap.value, mag);
+                nx = fix16_mul(nx, scale);
+                ny = fix16_mul(ny, scale);
             }
         }
     }
@@ -72,13 +72,15 @@ void Humanizer::process_stick(
         if (retarget_counter >= settings_.drift_retarget_frames)
         {
             retarget_counter = 0;
-            target_x = next_rand() * settings_.drift_max;
-            target_y = next_rand() * settings_.drift_max;
+            target_x = Fix16(next_rand() * settings_.drift_max);
+            target_y = Fix16(next_rand() * settings_.drift_max);
         }
-        drift_x = drift_x + (target_x - drift_x) * settings_.drift_strength;
-        drift_y = drift_y + (target_y - drift_y) * settings_.drift_strength;
-        nx = nx + drift_x;
-        ny = ny + drift_y;
+        fix16_t tx = fix16_sub(target_x.value, drift_x.value);
+        fix16_t ty = fix16_sub(target_y.value, drift_y.value);
+        drift_x.value = fix16_add(drift_x.value, fix16_mul(tx, settings_.drift_strength.value));
+        drift_y.value = fix16_add(drift_y.value, fix16_mul(ty, settings_.drift_strength.value));
+        nx = fix16_add(nx, drift_x.value);
+        ny = fix16_add(ny, drift_y.value);
         if (nx > FIX_1)    nx = FIX_1;
         if (nx < FIX_NEG1) nx = FIX_NEG1;
         if (ny > FIX_1)    ny = FIX_1;
@@ -86,8 +88,8 @@ void Humanizer::process_stick(
     }
     else
     {
-        drift_x = drift_x * FIX_095;
-        drift_y = drift_y * FIX_095;
+        drift_x.value = fix16_mul(drift_x.value, FIX_095);
+        drift_y.value = fix16_mul(drift_y.value, FIX_095);
         retarget_counter = 0;
     }
 
@@ -98,15 +100,16 @@ void Humanizer::process_stick(
 
     if (fade_counter > 0 && is_idle)
     {
-        Fix16 fade = Fix16(static_cast<int16_t>(fade_counter)) /
-                     Fix16(static_cast<int16_t>(settings_.release_fade_frames));
-        nx = nx * fade;
-        ny = ny * fade;
+        fix16_t fade = fix16_div(
+            fix16_from_int(static_cast<int16_t>(fade_counter)),
+            fix16_from_int(static_cast<int16_t>(settings_.release_fade_frames)));
+        nx = fix16_mul(nx, fade);
+        ny = fix16_mul(ny, fade);
         fade_counter--;
     }
 
     was_idle = is_idle;
 
-    x = static_cast<int16_t>(fix16_to_int(nx * INT16_MAX_F));
-    y = static_cast<int16_t>(fix16_to_int(ny * INT16_MAX_F));
+    x = static_cast<int16_t>(fix16_to_int(fix16_mul(nx, FIX_INT16_MAX)));
+    y = static_cast<int16_t>(fix16_to_int(fix16_mul(ny, FIX_INT16_MAX)));
 }
