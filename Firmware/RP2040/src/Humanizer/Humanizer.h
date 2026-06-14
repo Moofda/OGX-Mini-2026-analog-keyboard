@@ -20,8 +20,8 @@ struct HumanizerSettings
 class Humanizer
 {
 public:
-  Humanizer() = default;
-  ~Humanizer() = default;
+    Humanizer() = default;
+    ~Humanizer() = default;
 
     void set_settings(const HumanizerSettings& settings) { settings_ = settings; }
     const HumanizerSettings& get_settings() const { return settings_; }
@@ -29,9 +29,6 @@ public:
     void process(Gamepad::PadIn& pad_in);
 
 private:
-    Humanizer() = default;
-    ~Humanizer() = default;
-
     HumanizerSettings settings_;
 
     float drift_lx_ = 0.0f, drift_ly_ = 0.0f;
