@@ -47,33 +47,25 @@ void Humanizer::process_stick(
 {
     float nx = static_cast<float>(x) / INT16_MAX_F;
     float ny = static_cast<float>(y) / INT16_MAX_F;
-    float mag = sqrtf(nx * nx + ny * ny);
-    bool is_idle = (mag < settings_.idle_threshold);
 
-    if (!is_idle && mag > 0.0f)
+    // Use squared magnitude to avoid sqrtf
+    float mag_sq = nx * nx + ny * ny;
+    float idle_sq = settings_.idle_threshold * settings_.idle_threshold;
+    bool is_idle = (mag_sq < idle_sq);
+
+    // --- Layer 1: Magnitude cap ---
+    if (!is_idle && mag_sq > 0.0f)
     {
-        if (mag > settings_.magnitude_cap)
+        float cap_sq = settings_.magnitude_cap * settings_.magnitude_cap;
+        if (mag_sq > cap_sq)
         {
-            float scale = settings_.magnitude_cap / mag;
+            float scale = settings_.magnitude_cap / settings_.magnitude_cap;
             nx *= scale;
             ny *= scale;
-            mag = settings_.magnitude_cap;
-        }
-        if (settings_.magnitude_noise > 0.0f && mag > 0.5f)
-        {
-            float noise = next_rand() * settings_.magnitude_noise * (mag - 0.5f) * 2.0f;
-            float noised_mag = mag + noise;
-            if (noised_mag > settings_.magnitude_cap) noised_mag = settings_.magnitude_cap;
-            if (noised_mag > 0.0f && mag > 0.0f)
-            {
-                float scale = noised_mag / mag;
-                nx *= scale;
-                ny *= scale;
-                mag = noised_mag;
-            }
         }
     }
 
+    // --- Layer 2: Drift ---
     if (is_idle)
     {
         retarget_counter++;
@@ -99,6 +91,7 @@ void Humanizer::process_stick(
         retarget_counter = 0;
     }
 
+    // --- Release fade ---
     if (was_idle && !is_idle)
     {
         fade_counter = 0;
@@ -109,7 +102,8 @@ void Humanizer::process_stick(
     }
     if (fade_counter > 0 && is_idle)
     {
-        float fade = static_cast<float>(fade_counter) / static_cast<float>(settings_.release_fade_frames);
+        float fade = static_cast<float>(fade_counter) / 
+                     static_cast<float>(settings_.release_fade_frames);
         nx *= fade;
         ny *= fade;
         fade_counter--;
