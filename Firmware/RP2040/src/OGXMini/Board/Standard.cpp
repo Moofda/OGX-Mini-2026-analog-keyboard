@@ -1,5 +1,6 @@
 #include "Board/Config.h"
 #include "OGXMini/Board/Standard.h"
+#include "Humanizer/Humanizer.h"
 #if ((OGXM_BOARD == PI_PICO) || (OGXM_BOARD == RP2040_ZERO) || (OGXM_BOARD == ADAFRUIT_FEATHER) || (OGXM_BOARD == RP2350_USB_A) || (OGXM_BOARD == RP2350_ZERO) || (OGXM_BOARD == RP2040_XIAO) || (OGXM_BOARD == RP2354))
 
 #include <pico/multicore.h>
@@ -26,6 +27,7 @@
 constexpr uint32_t FEEDBACK_DELAY_MS = 200;
 
 Gamepad _gamepads[MAX_GAMEPADS];
+static Humanizer g_humanizer;
 
 void core1_task() {
     HostManager& host_manager = HostManager::get_instance();
@@ -220,6 +222,9 @@ void standard::run() {
             }
         }
         for (uint8_t i = 0; i < MAX_GAMEPADS; ++i) {
+            Gamepad::PadIn pad = _gamepads[i].get_pad_in();
+            g_humanizer.process(pad);
+            _gamepads[i].set_pad_in(pad);
             device_driver->process(i, _gamepads[i]);
         }
 #if MAIN_LOOP_DELAY_US > 0
