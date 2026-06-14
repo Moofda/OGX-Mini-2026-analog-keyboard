@@ -20,14 +20,8 @@ struct HumanizerSettings
 class Humanizer
 {
 public:
-    static Humanizer& get_instance()
-    {
-        static Humanizer instance;
-        return instance;
-    }
-
-    Humanizer(const Humanizer&) = delete;
-    Humanizer& operator=(const Humanizer&) = delete;
+  Humanizer() = default;
+  ~Humanizer() = default;
 
     void set_settings(const HumanizerSettings& settings) { settings_ = settings; }
     const HumanizerSettings& get_settings() const { return settings_; }
