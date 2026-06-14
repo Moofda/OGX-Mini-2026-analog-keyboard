@@ -2,6 +2,7 @@
 #include "bsp/board_api.h"
 
 #include "Board/ogxm_log.h"
+#include "Humanizer /Humanizer.h"
 #include "Descriptors/CDCDev.h"
 #include "USBDevice/DeviceDriver/WebApp/WebApp.h"
 
@@ -245,6 +246,23 @@ void WebAppDevice::process(const uint8_t idx, Gamepad& gamepad)
         
         switch (packet_out.header.packet_id)
         {
+            case PacketID::GET_HUMANIZER:
+            {
+                Packet reply;
+                reply.header.packet_id = PacketID::GET_HUMANIZER;
+                reply.header.chunk_len = sizeof(HumanizerSettings);
+                std::memcpy(reply.data.data(), &Humanizer::get_instance().get_settings(), sizeof(HumanizerSettings));
+                write_packet(reply);
+                break;
+            }
+            case PacketID::SET_HUMANIZER:
+            {
+                HumanizerSettings settings;
+                std::memcpy(&settings, packet_out.data.data(), sizeof(HumanizerSettings));
+                Humanizer::get_instance().set_settings(settings);
+                Humanizer::get_instance().save_to_flash();
+                break;
+            }
             case PacketID::GET_PROFILE_BY_ID:
                 OGXM_LOG("Getting profile by ID: %i\n", packet_out.header.profile_id);
 
