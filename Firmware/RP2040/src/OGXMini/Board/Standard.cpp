@@ -1,7 +1,9 @@
 #include "Board/Config.h"
 #include "OGXMini/Board/Standard.h"
-#include "Humanizer/Humanizer.h"
+
 #if ((OGXM_BOARD == PI_PICO) || (OGXM_BOARD == RP2040_ZERO) || (OGXM_BOARD == ADAFRUIT_FEATHER) || (OGXM_BOARD == RP2350_USB_A) || (OGXM_BOARD == RP2350_ZERO) || (OGXM_BOARD == RP2040_XIAO) || (OGXM_BOARD == RP2354))
+
+#include "Humanizer/Humanizer.h"
 
 #include <pico/multicore.h>
 #include <pico/time.h>
@@ -115,6 +117,7 @@ void standard::initialize() {
 }
 
 void standard::run() {
+    static Humanizer g_humanizer;
     DeviceDriverType current_driver = UserSettings::get_instance().get_current_driver();
     const bool gpio_device_mode = (current_driver == DeviceDriverType::PS1PS2 || current_driver == DeviceDriverType::GAMECUBE || current_driver == DeviceDriverType::DREAMCAST);
 
