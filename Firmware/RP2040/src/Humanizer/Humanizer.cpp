@@ -62,7 +62,13 @@ void Humanizer::process_stick(
     uint32_t& fade_counter,
     bool& was_idle)
 {
-    (void)x; (void)y; (void)drift_x; (void)drift_y;
+    (void)drift_x; (void)drift_y;
     (void)target_x; (void)target_y; (void)retarget_counter;
     (void)fade_counter; (void)was_idle;
+
+    fix16_t nx = fp_div(fp_from_int(x), fp_from_int(32767));
+    fix16_t ny = fp_div(fp_from_int(y), fp_from_int(32767));
+
+    x = static_cast<int16_t>(fp_to_int(fp_mul(nx, fp_from_int(32767))));
+    y = static_cast<int16_t>(fp_to_int(fp_mul(ny, fp_from_int(32767))));
 }
