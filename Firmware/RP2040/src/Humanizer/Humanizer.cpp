@@ -1,21 +1,12 @@
-#pragma GCC optimize ("O0")
 #include "Humanizer/Humanizer.h"
 
-static constexpr float INT16_MAX_F = 32767.0f;
-
-
-
-float Humanizer::next_rand()
+Fix16 Humanizer::next_rand()
 {
     rng_state_ ^= rng_state_ << 13;
     rng_state_ ^= rng_state_ >> 17;
     rng_state_ ^= rng_state_ << 5;
-    return static_cast<float>(static_cast<int32_t>(rng_state_)) / 2147483648.0f;
-}
-
-float Humanizer::next_rand_pos()
-{
-    return (next_rand() + 1.0f) * 0.5f;
+    int32_t signed_val = static_cast<int32_t>(rng_state_);
+    return Fix16(signed_val % 1000) / Fix16(1000);
 }
 
 void Humanizer::process(Gamepad::PadIn& pad_in)
@@ -41,34 +32,37 @@ void Humanizer::process(Gamepad::PadIn& pad_in)
 
 void Humanizer::process_stick(
     int16_t& x, int16_t& y,
-    float& drift_x, float& drift_y,
-    float& target_x, float& target_y,
+    Fix16& drift_x, Fix16& drift_y,
+    Fix16& target_x, Fix16& target_y,
     uint32_t& retarget_counter,
     uint32_t& fade_counter,
     bool& was_idle)
 {
-    float nx = static_cast<float>(x) / INT16_MAX_F;
-    float ny = static_cast<float>(y) / INT16_MAX_F;
-    float mag_sq = nx * nx + ny * ny;
-    float idle_sq = settings_.idle_threshold * settings_.idle_threshold;
+    static const Fix16 INT16_MAX_F(32767);
+    static const Fix16 FIX_1(1);
+    static const Fix16 FIX_0(0);
+    static const Fix16 FIX_NEG1(-1);
+    static const Fix16 FIX_095(0.95f);
+
+    Fix16 nx = Fix16(x) / INT16_MAX_F;
+    Fix16 ny = Fix16(y) / INT16_MAX_F;
+
+    Fix16 mag_sq = (nx * nx) + (ny * ny);
+    Fix16 idle_sq = settings_.idle_threshold * settings_.idle_threshold;
     bool is_idle = (mag_sq < idle_sq);
 
-    if (!is_idle && mag_sq > 0.0f)
+    if (!is_idle)
     {
-        float cap_sq = settings_.magnitude_cap * settings_.magnitude_cap;
+        Fix16 cap_sq = settings_.magnitude_cap * settings_.magnitude_cap;
         if (mag_sq > cap_sq)
         {
-            float mag = __builtin_sqrtf(mag_sq);
-            float scale = settings_.magnitude_cap / mag;
-            nx *= scale;
-            ny *= scale;
-            mag_sq = cap_sq;
-        }
-        if (settings_.magnitude_noise > 0.0f && mag_sq > 0.25f)
-        {
-            float noise = next_rand() * settings_.magnitude_noise * 0.1f;
-            nx += noise;
-            ny += noise;
+            Fix16 mag = fix16::sqrt(mag_sq);
+            if (mag > FIX_0)
+            {
+                Fix16 scale = settings_.magnitude_cap / mag;
+                nx = nx * scale;
+                ny = ny * scale;
+            }
         }
     }
 
@@ -81,19 +75,19 @@ void Humanizer::process_stick(
             target_x = next_rand() * settings_.drift_max;
             target_y = next_rand() * settings_.drift_max;
         }
-        drift_x += (target_x - drift_x) * settings_.drift_strength;
-        drift_y += (target_y - drift_y) * settings_.drift_strength;
-        nx += drift_x;
-        ny += drift_y;
-        if (nx >  1.0f) nx =  1.0f;
-        if (nx < -1.0f) nx = -1.0f;
-        if (ny >  1.0f) ny =  1.0f;
-        if (ny < -1.0f) ny = -1.0f;
+        drift_x = drift_x + (target_x - drift_x) * settings_.drift_strength;
+        drift_y = drift_y + (target_y - drift_y) * settings_.drift_strength;
+        nx = nx + drift_x;
+        ny = ny + drift_y;
+        if (nx > FIX_1)  nx = FIX_1;
+        if (nx < FIX_NEG1) nx = FIX_NEG1;
+        if (ny > FIX_1)  ny = FIX_1;
+        if (ny < FIX_NEG1) ny = FIX_NEG1;
     }
     else
     {
-        drift_x *= 0.95f;
-        drift_y *= 0.95f;
+        drift_x = drift_x * FIX_095;
+        drift_y = drift_y * FIX_095;
         retarget_counter = 0;
     }
 
@@ -104,15 +98,14 @@ void Humanizer::process_stick(
 
     if (fade_counter > 0 && is_idle)
     {
-        float fade = static_cast<float>(fade_counter) /
-                     static_cast<float>(settings_.release_fade_frames);
-        nx *= fade;
-        ny *= fade;
+        Fix16 fade = Fix16((int)fade_counter) / Fix16((int)settings_.release_fade_frames);
+        nx = nx * fade;
+        ny = ny * fade;
         fade_counter--;
     }
 
     was_idle = is_idle;
 
-    x = static_cast<int16_t>(nx * INT16_MAX_F);
-    y = static_cast<int16_t>(ny * INT16_MAX_F);
+    x = static_cast<int16_t>(fix16_to_int(nx * INT16_MAX_F));
+    y = static_cast<int16_t>(fix16_to_int(ny * INT16_MAX_F));
 }
