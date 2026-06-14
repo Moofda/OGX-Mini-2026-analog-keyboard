@@ -226,7 +226,8 @@ void standard::run() {
                 GPIOHost::n64_host_poll(_gamepads[0]);
             }
         }
-        for (uint8_t i = 0; i < MAX_GAMEPADS; ++i) {
+       for (uint8_t i = 0; i < MAX_GAMEPADS; ++i) {
+            board_api::set_led(true); sleep_ms(100); board_api::set_led(false);
             Gamepad::PadIn pad = _gamepads[i].get_pad_in();
             g_humanizer.process(pad);
             _gamepads[i].set_pad_in(pad);
