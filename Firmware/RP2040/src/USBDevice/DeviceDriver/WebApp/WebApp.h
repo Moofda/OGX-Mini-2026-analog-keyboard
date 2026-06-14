@@ -25,6 +25,8 @@ private:
     enum class PacketID : uint8_t
     {
         NONE = 0,
+        GET_HUMANIZER = 0x10,
+        SET_HUMANIZER = 0x11,
         GET_PROFILE_BY_ID = 0x50,
         GET_PROFILE_BY_IDX = 0x55,
         SET_PROFILE_START = 0x60,
