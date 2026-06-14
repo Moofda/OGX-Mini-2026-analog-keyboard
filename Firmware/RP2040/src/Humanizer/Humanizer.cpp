@@ -1,3 +1,4 @@
+#include <cmath>
 #include "Humanizer/Humanizer.h"
 
 static constexpr float INT16_MAX_F = 32767.0f;
