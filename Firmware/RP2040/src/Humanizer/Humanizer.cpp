@@ -3,26 +3,7 @@
 
 static constexpr float INT16_MAX_F = 32767.0f;
 
-Humanizer::Humanizer()
-{
-    settings_.magnitude_cap = 0.85f;
-    settings_.magnitude_noise = 0.03f;
-    settings_.drift_strength = 0.08f;
-    settings_.drift_max = 0.25f;
-    settings_.drift_retarget_frames = 400;
-    settings_.idle_threshold = 0.10f;
-    settings_.release_fade_frames = 12;
-    settings_.enabled = true;
 
-    drift_lx_ = 0.0f; drift_ly_ = 0.0f;
-    drift_rx_ = 0.0f; drift_ry_ = 0.0f;
-    target_lx_ = 0.0f; target_ly_ = 0.0f;
-    target_rx_ = 0.0f; target_ry_ = 0.0f;
-    retarget_counter_l_ = 0; retarget_counter_r_ = 0;
-    fade_counter_l_ = 0; fade_counter_r_ = 0;
-    was_idle_l_ = true; was_idle_r_ = true;
-    rng_state_ = 12345;
-}
 
 float Humanizer::next_rand()
 {
