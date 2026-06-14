@@ -5,9 +5,7 @@
 #include "tusb.h"
 #include "USBDevice/DeviceDriver/XInput/tud_xinput/tud_xinput.h"
 #include "USBDevice/DeviceDriver/XInput/XInput.h"
-#include "Humanizer/Humanizer.h"
 
-static Humanizer g_humanizer;
 
 extern "C" {
 #include "xsm3.h"
