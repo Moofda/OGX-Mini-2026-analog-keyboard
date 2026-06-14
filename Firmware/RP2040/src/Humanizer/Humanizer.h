@@ -14,8 +14,8 @@ struct HumanizerSettings
     float magnitude_noise          = 0.03f;
 
     // --- Layer 2: Drift ---
-    float drift_strength           = 0.02f;
-    float drift_max                = 0.05f;
+    float drift_strength           = 0.08f;
+    float drift_max                = 0.25f;
     uint32_t drift_retarget_frames = 400;
 
     // Inputs below this (normalized) are treated as idle and drift is applied
