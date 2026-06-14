@@ -2,25 +2,24 @@
 #define _HUMANIZER_H_
 
 #include <cstdint>
-#include <cmath>
 #include "Gamepad/Gamepad.h"
 
 struct HumanizerSettings
 {
-    float magnitude_cap            = 0.85f;
-    float magnitude_noise          = 0.03f;
-    float drift_strength           = 0.08f;
-    float drift_max                = 0.25f;
-    uint32_t drift_retarget_frames = 400;
-    float idle_threshold           = 0.10f;
-    uint32_t release_fade_frames   = 12;
-    bool enabled                   = true;
+    float magnitude_cap;
+    float magnitude_noise;
+    float drift_strength;
+    float drift_max;
+    uint32_t drift_retarget_frames;
+    float idle_threshold;
+    uint32_t release_fade_frames;
+    bool enabled;
 };
 
 class Humanizer
 {
 public:
-    Humanizer() = default;
+    Humanizer();
     ~Humanizer() = default;
 
     void set_settings(const HumanizerSettings& settings) { settings_ = settings; }
@@ -31,14 +30,14 @@ public:
 private:
     HumanizerSettings settings_;
 
-    float drift_lx_ = 0.0f, drift_ly_ = 0.0f;
-    float drift_rx_ = 0.0f, drift_ry_ = 0.0f;
-    float target_lx_ = 0.0f, target_ly_ = 0.0f;
-    float target_rx_ = 0.0f, target_ry_ = 0.0f;
-    uint32_t retarget_counter_l_ = 0, retarget_counter_r_ = 0;
-    uint32_t fade_counter_l_ = 0, fade_counter_r_ = 0;
-    bool was_idle_l_ = true, was_idle_r_ = true;
-    uint32_t rng_state_ = 12345;
+    float drift_lx_, drift_ly_;
+    float drift_rx_, drift_ry_;
+    float target_lx_, target_ly_;
+    float target_rx_, target_ry_;
+    uint32_t retarget_counter_l_, retarget_counter_r_;
+    uint32_t fade_counter_l_, fade_counter_r_;
+    bool was_idle_l_, was_idle_r_;
+    uint32_t rng_state_;
 
     float next_rand();
     float next_rand_pos();
