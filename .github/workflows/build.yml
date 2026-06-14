@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: bbaa6a1776256774deece6504338b0f7f522c0ad
+          ref: v1-humanizer
           submodules: recursive
 
       - name: Install Dependencies
