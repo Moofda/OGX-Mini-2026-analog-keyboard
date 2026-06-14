@@ -7,7 +7,7 @@
 #include "USBDevice/DeviceDriver/XInput/XInput.h"
 #include "Humanizer/Humanizer.h"
 
-static Humanizer* g_humanizer = nullptr;
+static Humanizer g_humanizer;
 
 extern "C" {
 #include "xsm3.h"
@@ -60,13 +60,8 @@ void XInputDevice::process(const uint8_t idx, Gamepad& gamepad)
 	// Always read latest state and build report every loop so get_report_cb and IN send both see current state (minimal latency; only delay is BT radio when wireless).
 	in_report_.buttons[0] = 0;
 	in_report_.buttons[1] = 0;
-    if (g_humanizer == nullptr)
-	{
-		g_humanizer = new Humanizer();
-	}
-	Gamepad::PadIn gp_in = gamepad.get_pad_in();
-	g_humanizer->process(gp_in);
-	
+    Gamepad::PadIn gp_in = gamepad.get_pad_in();
+	g_humanizer.process(gp_in);
 	
 	
 
