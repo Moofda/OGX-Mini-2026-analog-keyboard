@@ -85,11 +85,6 @@ void Humanizer::process_stick(
     fix16_t nx = fp_div(fp_from_int(x), fp_from_int(32767));
     fix16_t ny = fp_div(fp_from_int(y), fp_from_int(32767));
 
-    fix16_t mag_sq = fp_mul(nx, nx) + fp_mul(ny, ny);
-    fix16_t idle_sq = fp_mul(settings_.idle_threshold, settings_.idle_threshold);
-    bool is_idle = (mag_sq < idle_sq);
-    (void)is_idle;
-
     x = static_cast<int16_t>(fp_to_int(fp_mul(nx, fp_from_int(32767))));
     y = static_cast<int16_t>(fp_to_int(fp_mul(ny, fp_from_int(32767))));
 }
