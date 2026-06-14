@@ -34,11 +34,10 @@ static fix16_t fp_sqrt(fix16_t x)
     return result;
 }
 
-static const fix16_t FIX_INT16_MAX = 0x7FFF0000;
-static const fix16_t FIX_1         = 0x00010000;
-static const fix16_t FIX_0         = 0x00000000;
-static const fix16_t FIX_NEG1      = 0xFFFF0000;
-static const fix16_t FIX_095       = 0x0000F333;
+static const fix16_t FIX_1    = 0x00010000;
+static const fix16_t FIX_0    = 0x00000000;
+static const fix16_t FIX_NEG1 = 0xFFFF0000;
+static const fix16_t FIX_095  = 0x0000F333;
 
 fix16_t Humanizer::next_rand()
 {
@@ -51,8 +50,23 @@ fix16_t Humanizer::next_rand()
 
 void Humanizer::process(Gamepad::PadIn& pad_in)
 {
-    (void)pad_in;
-    return;
+    if (!settings_.enabled) return;
+
+    process_stick(
+        pad_in.joystick_lx, pad_in.joystick_ly,
+        drift_lx_, drift_ly_,
+        target_lx_, target_ly_,
+        retarget_counter_l_,
+        fade_counter_l_,
+        was_idle_l_);
+
+    process_stick(
+        pad_in.joystick_rx, pad_in.joystick_ry,
+        drift_rx_, drift_ry_,
+        target_rx_, target_ry_,
+        retarget_counter_r_,
+        fade_counter_r_,
+        was_idle_r_);
 }
 
 void Humanizer::process_stick(
@@ -66,24 +80,9 @@ void Humanizer::process_stick(
     fix16_t nx = fp_div(fp_from_int(x), fp_from_int(32767));
     fix16_t ny = fp_div(fp_from_int(y), fp_from_int(32767));
 
-    fix16_t mag_sq = fp_mul(nx, nx) + fp_mul(ny, ny);
     fix16_t idle_sq = fp_mul(settings_.idle_threshold, settings_.idle_threshold);
+    fix16_t mag_sq = fp_mul(nx, nx) + fp_mul(ny, ny);
     bool is_idle = (mag_sq < idle_sq);
-
-    if (!is_idle)
-    {
-        fix16_t cap_sq = fp_mul(settings_.magnitude_cap, settings_.magnitude_cap);
-        if (mag_sq > cap_sq)
-        {
-            fix16_t mag = fp_sqrt(mag_sq);
-            if (mag > FIX_0)
-            {
-                fix16_t scale = fp_div(settings_.magnitude_cap, mag);
-                nx = fp_mul(nx, scale);
-                ny = fp_mul(ny, scale);
-            }
-        }
-    }
 
     if (is_idle)
     {
@@ -108,21 +107,6 @@ void Humanizer::process_stick(
         drift_x = fp_mul(drift_x, FIX_095);
         drift_y = fp_mul(drift_y, FIX_095);
         retarget_counter = 0;
-    }
-
-    if (was_idle && !is_idle)
-        fade_counter = 0;
-    else if (!was_idle && is_idle)
-        fade_counter = settings_.release_fade_frames;
-
-    if (fade_counter > 0 && is_idle)
-    {
-        fix16_t fade = fp_div(
-            fp_from_int(static_cast<int16_t>(fade_counter)),
-            fp_from_int(static_cast<int16_t>(settings_.release_fade_frames)));
-        nx = fp_mul(nx, fade);
-        ny = fp_mul(ny, fade);
-        fade_counter--;
     }
 
     was_idle = is_idle;
