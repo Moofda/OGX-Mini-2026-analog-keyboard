@@ -1,142 +1,131 @@
 #include "Humanizer/Humanizer.h"
-#include "UserSettings/NVSTool.h"
 
-static constexpr float INT16_MAX_F = 32767.0f;
-static const std::string HUMANIZER_KEY = "humanizer";
-
-void Humanizer::load_from_flash()
+static inline fix16_t fp_mul(fix16_t a, fix16_t b)
 {
-    NVSTool nvs;
-    HumanizerSettings loaded;
-    if (nvs.read(HUMANIZER_KEY, &loaded, sizeof(HumanizerSettings)))
+    return (fix16_t)(((int64_t)a * b) >> 16);
+}
+
+static inline fix16_t fp_div(fix16_t a, fix16_t b)
+{
+    if (b == 0) return 0;
+    return (fix16_t)(((int64_t)a << 16) / b);
+}
+
+static inline fix16_t fp_from_int(int16_t a)
+{
+    return (fix16_t)((int32_t)a << 16);
+}
+
+static inline int16_t fp_to_int(fix16_t a)
+{
+    return (int16_t)(a >> 16);
+}
+
+static fix16_t fp_sqrt(fix16_t x)
+{
+    if (x <= 0) return 0;
+    fix16_t result = x;
+    fix16_t prev = 0;
+    for (int i = 0; i < 20 && result != prev; i++)
     {
-        settings_ = loaded;
+        prev = result;
+        result = (result + (fix16_t)(((int64_t)x << 16) / result)) >> 1;
     }
+    return result;
 }
 
-void Humanizer::save_to_flash()
-{
-    NVSTool nvs;
-    nvs.write(HUMANIZER_KEY, &settings_, sizeof(HumanizerSettings));
-}
+static const fix16_t FIX_1    = 0x00010000;
+static const fix16_t FIX_0    = 0x00000000;
+static const fix16_t FIX_NEG1 = 0xFFFF0000;
+static const fix16_t FIX_095  = 0x0000F333;
 
-float Humanizer::next_rand()
+fix16_t Humanizer::next_rand()
 {
     rng_state_ ^= rng_state_ << 13;
     rng_state_ ^= rng_state_ >> 17;
     rng_state_ ^= rng_state_ << 5;
-    return static_cast<float>(static_cast<int32_t>(rng_state_)) / 2147483648.0f;
-}
-
-float Humanizer::next_rand_pos()
-{
-    return (next_rand() + 1.0f) * 0.5f;
+    int16_t signed_val = static_cast<int16_t>(rng_state_ % 1000);
+    return fp_div(fp_from_int(signed_val), fp_from_int(1000));
 }
 
 void Humanizer::process(Gamepad::PadIn& pad_in)
 {
-    if (!settings_.enabled) return;
-
-    process_stick(
-        pad_in.joystick_lx, pad_in.joystick_ly,
-        drift_lx_, drift_ly_,
-        target_lx_, target_ly_,
-        retarget_counter_l_,
-        fade_counter_l_,
-        was_idle_l_);
-
-    process_stick(
-        pad_in.joystick_rx, pad_in.joystick_ry,
-        drift_rx_, drift_ry_,
-        target_rx_, target_ry_,
-        retarget_counter_r_,
-        fade_counter_r_,
-        was_idle_r_);
+    (void)pad_in;
+    return;
 }
 
 void Humanizer::process_stick(
     int16_t& x, int16_t& y,
-    float& drift_x, float& drift_y,
-    float& target_x, float& target_y,
+    fix16_t& drift_x, fix16_t& drift_y,
+    fix16_t& target_x, fix16_t& target_y,
     uint32_t& retarget_counter,
     uint32_t& fade_counter,
     bool& was_idle)
 {
-    float nx = static_cast<float>(x) / INT16_MAX_F;
-    float ny = static_cast<float>(y) / INT16_MAX_F;
-    float mag = sqrtf(nx * nx + ny * ny);
-    bool is_idle = (mag < settings_.idle_threshold);
+    fix16_t nx = fp_div(fp_from_int(x), fp_from_int(32767));
+    fix16_t ny = fp_div(fp_from_int(y), fp_from_int(32767));
 
-    // --- Layer 1: Magnitude shaping ---
-    if (!is_idle && mag > 0.0f)
+    fix16_t mag_sq = fp_mul(nx, nx) + fp_mul(ny, ny);
+    fix16_t idle_sq = fp_mul(settings_.idle_threshold, settings_.idle_threshold);
+    bool is_idle = (mag_sq < idle_sq);
+
+    if (!is_idle)
     {
-        if (mag > settings_.magnitude_cap)
+        fix16_t cap_sq = fp_mul(settings_.magnitude_cap, settings_.magnitude_cap);
+        if (mag_sq > cap_sq)
         {
-            float scale = settings_.magnitude_cap / mag;
-            nx *= scale;
-            ny *= scale;
-            mag = settings_.magnitude_cap;
-        }
-        if (settings_.magnitude_noise > 0.0f && mag > 0.5f)
-        {
-            float noise = next_rand() * settings_.magnitude_noise * (mag - 0.5f) * 2.0f;
-            float noised_mag = mag + noise;
-            if (noised_mag > settings_.magnitude_cap) noised_mag = settings_.magnitude_cap;
-            if (noised_mag > 0.0f && mag > 0.0f)
+            fix16_t mag = fp_sqrt(mag_sq);
+            if (mag > FIX_0)
             {
-                float scale = noised_mag / mag;
-                nx *= scale;
-                ny *= scale;
-                mag = noised_mag;
+                fix16_t scale = fp_div(settings_.magnitude_cap, mag);
+                nx = fp_mul(nx, scale);
+                ny = fp_mul(ny, scale);
             }
         }
     }
 
-    // --- Layer 2: Drift ---
     if (is_idle)
     {
         retarget_counter++;
         if (retarget_counter >= settings_.drift_retarget_frames)
         {
             retarget_counter = 0;
-            target_x = next_rand() * settings_.drift_max;
-            target_y = next_rand() * settings_.drift_max;
+            target_x = fp_mul(next_rand(), settings_.drift_max);
+            target_y = fp_mul(next_rand(), settings_.drift_max);
         }
-        drift_x += (target_x - drift_x) * settings_.drift_strength;
-        drift_y += (target_y - drift_y) * settings_.drift_strength;
-        nx += drift_x;
-        ny += drift_y;
-        if (nx >  1.0f) nx =  1.0f;
-        if (nx < -1.0f) nx = -1.0f;
-        if (ny >  1.0f) ny =  1.0f;
-        if (ny < -1.0f) ny = -1.0f;
+        drift_x = drift_x + fp_mul(target_x - drift_x, settings_.drift_strength);
+        drift_y = drift_y + fp_mul(target_y - drift_y, settings_.drift_strength);
+        nx = nx + drift_x;
+        ny = ny + drift_y;
+        if (nx > FIX_1)    nx = FIX_1;
+        if (nx < FIX_NEG1) nx = FIX_NEG1;
+        if (ny > FIX_1)    ny = FIX_1;
+        if (ny < FIX_NEG1) ny = FIX_NEG1;
     }
     else
     {
-        drift_x *= 0.95f;
-        drift_y *= 0.95f;
+        drift_x = fp_mul(drift_x, FIX_095);
+        drift_y = fp_mul(drift_y, FIX_095);
         retarget_counter = 0;
     }
 
-    // --- Release fade ---
     if (was_idle && !is_idle)
-    {
         fade_counter = 0;
-    }
     else if (!was_idle && is_idle)
-    {
         fade_counter = settings_.release_fade_frames;
-    }
+
     if (fade_counter > 0 && is_idle)
     {
-        float fade = static_cast<float>(fade_counter) / static_cast<float>(settings_.release_fade_frames);
-        nx *= fade;
-        ny *= fade;
+        fix16_t fade = fp_div(
+            fp_from_int(static_cast<int16_t>(fade_counter)),
+            fp_from_int(static_cast<int16_t>(settings_.release_fade_frames)));
+        nx = fp_mul(nx, fade);
+        ny = fp_mul(ny, fade);
         fade_counter--;
     }
 
     was_idle = is_idle;
 
-    x = static_cast<int16_t>(nx * INT16_MAX_F);
-    y = static_cast<int16_t>(ny * INT16_MAX_F);
+    x = static_cast<int16_t>(fp_to_int(fp_mul(nx, fp_from_int(32767))));
+    y = static_cast<int16_t>(fp_to_int(fp_mul(ny, fp_from_int(32767))));
 }
