@@ -1,5 +1,7 @@
 #include "Humanizer/Humanizer.h"
+extern "C" {
 #include "libfixmath/fix16.h"
+}
 
 static const fix16_t FIX_INT16_MAX = 0x7FFF0000;
 static const fix16_t FIX_1         = 0x00010000;
