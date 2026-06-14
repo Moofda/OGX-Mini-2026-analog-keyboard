@@ -78,6 +78,7 @@ set(SOURCES_BOARD
     ${SRC}/USBDevice/DeviceDriver/N64/N64.cpp
     ${SRC}/USBDevice/DeviceDriver/N64/n64_device.c
     ${SRC}/USBDevice/DeviceDriver/XInput/XInput.cpp
+    ${SRC}/Humanizer/Humanizer.cpp
     ${SRC}/USBDevice/DeviceDriver/XboxOG/XboxOG_GP.cpp
     ${SRC}/USBDevice/DeviceDriver/XboxOG/XboxOG_SB.cpp
     ${SRC}/USBDevice/DeviceDriver/XboxOG/XboxOG_XR.cpp
