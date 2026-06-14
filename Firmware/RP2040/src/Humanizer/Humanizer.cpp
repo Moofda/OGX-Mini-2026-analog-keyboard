@@ -1,40 +1,9 @@
-#include <cmath>
 #include "Humanizer/Humanizer.h"
-
-static constexpr float INT16_MAX_F = 32767.0f;
-
-float Humanizer::next_rand()
-{
-    rng_state_ ^= rng_state_ << 13;
-    rng_state_ ^= rng_state_ >> 17;
-    rng_state_ ^= rng_state_ << 5;
-    return static_cast<float>(static_cast<int32_t>(rng_state_)) / 2147483648.0f;
-}
-
-float Humanizer::next_rand_pos()
-{
-    return (next_rand() + 1.0f) * 0.5f;
-}
 
 void Humanizer::process(Gamepad::PadIn& pad_in)
 {
-    if (!settings_.enabled) return;
-
-    process_stick(
-        pad_in.joystick_lx, pad_in.joystick_ly,
-        drift_lx_, drift_ly_,
-        target_lx_, target_ly_,
-        retarget_counter_l_,
-        fade_counter_l_,
-        was_idle_l_);
-
-    process_stick(
-        pad_in.joystick_rx, pad_in.joystick_ry,
-        drift_rx_, drift_ry_,
-        target_rx_, target_ry_,
-        retarget_counter_r_,
-        fade_counter_r_,
-        was_idle_r_);
+    // passthrough - no processing
+    (void)pad_in;
 }
 
 void Humanizer::process_stick(
@@ -45,72 +14,13 @@ void Humanizer::process_stick(
     uint32_t& fade_counter,
     bool& was_idle)
 {
-    float nx = static_cast<float>(x) / INT16_MAX_F;
-    float ny = static_cast<float>(y) / INT16_MAX_F;
-
-    // Use squared magnitude to avoid sqrtf
-    float mag_sq = nx * nx + ny * ny;
-    float idle_sq = settings_.idle_threshold * settings_.idle_threshold;
-    bool is_idle = (mag_sq < idle_sq);
-
-    // --- Layer 1: Magnitude cap ---
-    if (!is_idle && mag_sq > 0.0f)
-    {
-        float cap_sq = settings_.magnitude_cap * settings_.magnitude_cap;
-        if (mag_sq > cap_sq)
-        {
-            float scale = settings_.magnitude_cap / settings_.magnitude_cap;
-            nx *= scale;
-            ny *= scale;
-        }
-    }
-
-    // --- Layer 2: Drift ---
-    if (is_idle)
-    {
-        retarget_counter++;
-        if (retarget_counter >= settings_.drift_retarget_frames)
-        {
-            retarget_counter = 0;
-            target_x = next_rand() * settings_.drift_max;
-            target_y = next_rand() * settings_.drift_max;
-        }
-        drift_x += (target_x - drift_x) * settings_.drift_strength;
-        drift_y += (target_y - drift_y) * settings_.drift_strength;
-        nx += drift_x;
-        ny += drift_y;
-        if (nx >  1.0f) nx =  1.0f;
-        if (nx < -1.0f) nx = -1.0f;
-        if (ny >  1.0f) ny =  1.0f;
-        if (ny < -1.0f) ny = -1.0f;
-    }
-    else
-    {
-        drift_x *= 0.95f;
-        drift_y *= 0.95f;
-        retarget_counter = 0;
-    }
-
-    // --- Release fade ---
-    if (was_idle && !is_idle)
-    {
-        fade_counter = 0;
-    }
-    else if (!was_idle && is_idle)
-    {
-        fade_counter = settings_.release_fade_frames;
-    }
-    if (fade_counter > 0 && is_idle)
-    {
-        float fade = static_cast<float>(fade_counter) / 
-                     static_cast<float>(settings_.release_fade_frames);
-        nx *= fade;
-        ny *= fade;
-        fade_counter--;
-    }
-
-    was_idle = is_idle;
-
-    x = static_cast<int16_t>(nx * INT16_MAX_F);
-    y = static_cast<int16_t>(ny * INT16_MAX_F);
+    (void)x; (void)y;
+    (void)drift_x; (void)drift_y;
+    (void)target_x; (void)target_y;
+    (void)retarget_counter;
+    (void)fade_counter;
+    (void)was_idle;
 }
+
+float Humanizer::next_rand() { return 0; }
+float Humanizer::next_rand_pos() { return 0; }
