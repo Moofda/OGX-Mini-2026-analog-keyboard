@@ -1,6 +1,24 @@
 #include "Humanizer/Humanizer.h"
+#include "UserSettings/NVSTool.h"
 
 static constexpr float INT16_MAX_F = 32767.0f;
+static const std::string HUMANIZER_KEY = "humanizer";
+
+void Humanizer::load_from_flash()
+{
+    NVSTool nvs;
+    HumanizerSettings loaded;
+    if (nvs.read(HUMANIZER_KEY, &loaded, sizeof(HumanizerSettings)))
+    {
+        settings_ = loaded;
+    }
+}
+
+void Humanizer::save_to_flash()
+{
+    NVSTool nvs;
+    nvs.write(HUMANIZER_KEY, &settings_, sizeof(HumanizerSettings));
+}
 
 float Humanizer::next_rand()
 {
@@ -44,20 +62,14 @@ void Humanizer::process_stick(
     uint32_t& fade_counter,
     bool& was_idle)
 {
-    // Normalize to -1.0 to 1.0
     float nx = static_cast<float>(x) / INT16_MAX_F;
     float ny = static_cast<float>(y) / INT16_MAX_F;
-
-    // Compute magnitude
     float mag = sqrtf(nx * nx + ny * ny);
-
     bool is_idle = (mag < settings_.idle_threshold);
 
     // --- Layer 1: Magnitude shaping ---
-    // Only applies when stick is actually being deflected
     if (!is_idle && mag > 0.0f)
     {
-        // Cap magnitude
         if (mag > settings_.magnitude_cap)
         {
             float scale = settings_.magnitude_cap / mag;
@@ -65,8 +77,6 @@ void Humanizer::process_stick(
             ny *= scale;
             mag = settings_.magnitude_cap;
         }
-
-        // Add subtle magnitude noise at high deflection
         if (settings_.magnitude_noise > 0.0f && mag > 0.5f)
         {
             float noise = next_rand() * settings_.magnitude_noise * (mag - 0.5f) * 2.0f;
@@ -85,7 +95,6 @@ void Humanizer::process_stick(
     // --- Layer 2: Drift ---
     if (is_idle)
     {
-        // Retarget drift periodically
         retarget_counter++;
         if (retarget_counter >= settings_.drift_retarget_frames)
         {
@@ -93,16 +102,10 @@ void Humanizer::process_stick(
             target_x = next_rand() * settings_.drift_max;
             target_y = next_rand() * settings_.drift_max;
         }
-
-        // Smoothly move drift toward target
         drift_x += (target_x - drift_x) * settings_.drift_strength;
         drift_y += (target_y - drift_y) * settings_.drift_strength;
-
-        // Apply drift to output
         nx += drift_x;
         ny += drift_y;
-
-        // Clamp
         if (nx >  1.0f) nx =  1.0f;
         if (nx < -1.0f) nx = -1.0f;
         if (ny >  1.0f) ny =  1.0f;
@@ -110,25 +113,20 @@ void Humanizer::process_stick(
     }
     else
     {
-        // Stick is active — decay drift slowly back to zero
         drift_x *= 0.95f;
         drift_y *= 0.95f;
         retarget_counter = 0;
     }
 
     // --- Release fade ---
-    // When stick transitions from active to idle, fade output over a few frames
     if (was_idle && !is_idle)
     {
-        // Stick just engaged — reset fade
         fade_counter = 0;
     }
     else if (!was_idle && is_idle)
     {
-        // Stick just released — start fade
         fade_counter = settings_.release_fade_frames;
     }
-
     if (fade_counter > 0 && is_idle)
     {
         float fade = static_cast<float>(fade_counter) / static_cast<float>(settings_.release_fade_frames);
@@ -139,7 +137,6 @@ void Humanizer::process_stick(
 
     was_idle = is_idle;
 
-    // Convert back to int16
     x = static_cast<int16_t>(nx * INT16_MAX_F);
     y = static_cast<int16_t>(ny * INT16_MAX_F);
 }
