@@ -5,8 +5,8 @@ Fix16 Humanizer::next_rand()
     rng_state_ ^= rng_state_ << 13;
     rng_state_ ^= rng_state_ >> 17;
     rng_state_ ^= rng_state_ << 5;
-    int32_t signed_val = static_cast<int32_t>(rng_state_);
-    return Fix16(signed_val % 1000) / Fix16(1000);
+    int16_t signed_val = static_cast<int16_t>(rng_state_ % 1000);
+    return Fix16(signed_val) / Fix16(static_cast<int16_t>(1000));
 }
 
 void Humanizer::process(Gamepad::PadIn& pad_in)
@@ -38,10 +38,10 @@ void Humanizer::process_stick(
     uint32_t& fade_counter,
     bool& was_idle)
 {
-    static const Fix16 INT16_MAX_F(32767);
-    static const Fix16 FIX_1(1);
-    static const Fix16 FIX_0(0);
-    static const Fix16 FIX_NEG1(-1);
+    static const Fix16 INT16_MAX_F(static_cast<int16_t>(32767));
+    static const Fix16 FIX_1(static_cast<int16_t>(1));
+    static const Fix16 FIX_0(static_cast<int16_t>(0));
+    static const Fix16 FIX_NEG1(static_cast<int16_t>(-1));
     static const Fix16 FIX_095(0.95f);
 
     Fix16 nx = Fix16(x) / INT16_MAX_F;
@@ -79,9 +79,9 @@ void Humanizer::process_stick(
         drift_y = drift_y + (target_y - drift_y) * settings_.drift_strength;
         nx = nx + drift_x;
         ny = ny + drift_y;
-        if (nx > FIX_1)  nx = FIX_1;
+        if (nx > FIX_1)    nx = FIX_1;
         if (nx < FIX_NEG1) nx = FIX_NEG1;
-        if (ny > FIX_1)  ny = FIX_1;
+        if (ny > FIX_1)    ny = FIX_1;
         if (ny < FIX_NEG1) ny = FIX_NEG1;
     }
     else
@@ -98,7 +98,8 @@ void Humanizer::process_stick(
 
     if (fade_counter > 0 && is_idle)
     {
-        Fix16 fade = Fix16((int)fade_counter) / Fix16((int)settings_.release_fade_frames);
+        Fix16 fade = Fix16(static_cast<int16_t>(fade_counter)) / 
+                     Fix16(static_cast<int16_t>(settings_.release_fade_frames));
         nx = nx * fade;
         ny = ny * fade;
         fade_counter--;
